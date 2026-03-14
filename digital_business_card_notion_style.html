@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>個人數位名片｜黃鈺鈞</title>
+
+<style>
+:root{
+--bg:#f7f7f5;
+--card:rgba(255,255,255,0.78);
+--text:#2f3437;
+--muted:#6b7280;
+--line:rgba(15,23,42,0.08);
+--shadow:0 20px 50px rgba(15,23,42,0.08);
+--btn-bg:#ffffff;
+--btn-hover:#f1f5f9;
+--accent:#94a3b8;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+margin:0;
+min-height:100%;
+font-family:"Inter","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+color:var(--text);
+background:var(--bg);
+}
+
+body{
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:24px;
+}
+
+.card{
+width:min(100%,460px);
+background:var(--card);
+border:1px solid var(--line);
+border-radius:28px;
+padding:42px 28px 32px;
+text-align:center;
+box-shadow:var(--shadow);
+}
+
+.avatar{
+width:130px;
+height:130px;
+margin:0 auto 22px;
+border-radius:50%;
+overflow:hidden;
+border:2px dashed rgba(100,116,139,0.4);
+position:relative;
+cursor:pointer;
+}
+
+.avatar img{
+position:absolute;
+left:0;
+top:0;
+transform-origin:0 0;
+}
+
+.avatar span{
+position:absolute;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+font-size:13px;
+color:var(--muted);
+}
+
+h1{margin:0;font-size:32px;font-weight:700}
+
+.subtitle{
+margin:14px auto 0;
+max-width:330px;
+font-size:16px;
+line-height:1.8;
+color:var(--muted);
+}
+
+.keyword{color:var(--accent);font-weight:700}
+
+.links{
+margin-top:30px;
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+justify-content:center;
+}
+
+.link-btn{
+padding:12px 18px;
+border-radius:999px;
+border:1px solid var(--line);
+background:var(--btn-bg);
+color:var(--text);
+text-decoration:none;
+font-size:14px;
+font-weight:600;
+}
+
+.add-btn{
+font-size:20px;
+width:42px;
+height:42px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.controls{margin-top:25px}
+
+.color-btn{
+padding:10px 16px;
+border-radius:999px;
+border:1px solid var(--line);
+background:var(--btn-bg);
+cursor:pointer;
+font-weight:600;
+}
+
+.dialog{
+position:fixed;top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.35);
+display:none;align-items:center;justify-content:center
+}
+
+.dialog-box{
+background:white;padding:20px;border-radius:14px;width:260px
+}
+
+.crop-box{
+background:white;padding:20px;border-radius:14px;width:320px;text-align:center
+}
+
+.crop-preview{
+width:130px;
+height:130px;
+border-radius:50%;
+overflow:hidden;
+margin:auto;
+position:relative;
+cursor:grab
+}
+
+.crop-preview img{
+position:absolute;
+left:0;
+top:0;
+transform-origin:0 0;
+}
+
+.rainbow1{--bg:#fef2f2;--accent:#fca5a5}
+.rainbow2{--bg:#fff7ed;--accent:#fdba74}
+.rainbow3{--bg:#fefce8;--accent:#fde047}
+.rainbow4{--bg:#ecfdf5;--accent:#86efac}
+.rainbow5{--bg:#eff6ff;--accent:#93c5fd}
+.rainbow6{--bg:#f5f3ff;--accent:#c4b5fd}
+.rainbow7{--bg:#fdf4ff;--accent:#f0abfc}
+</style>
+</head>
+
+<body id="body">
+
+<div class="card">
+
+<div class="avatar" id="avatar">
+<span>上傳照片</span>
+</div>
+
+<h1>黃鈺鈞</h1>
+
+<p class="subtitle">
+我是熱愛 <span class="keyword">coding</span> 的
+<span class="keyword">東華</span> 大學生
+</p>
+
+<div class="links" id="links">
+<a class="link-btn add-btn" id="addBtn">+</a>
+</div>
+
+<div class="controls">
+<button class="color-btn" id="colorBtn">change interface color</button>
+</div>
+
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<div class="dialog" id="dialog">
+<div class="dialog-box">
+<input id="nameInput" placeholder="link name">
+<input id="urlInput" placeholder="https://">
+<button onclick="addLink()">add</button>
+</div>
+</div>
+
+<div class="dialog" id="cropDialog">
+<div class="crop-box">
+<div class="crop-preview" id="preview"></div>
+<button onclick="saveAvatar()">save</button>
+</div>
+</div>
+
+<script>
+
+/* ---------------- LINKS ---------------- */
+
+const addBtn=document.getElementById("addBtn")
+const dialog=document.getElementById("dialog")
+const links=document.getElementById("links")
+
+addBtn.onclick=()=>dialog.style.display="flex"
+
+function addLink(){
+
+const name=document.getElementById("nameInput").value
+const url=document.getElementById("urlInput").value
+
+if(name && url){
+
+const a=document.createElement("a")
+a.className="link-btn"
+a.innerText=name
+
+a.href=url
+
+a.target="_blank"
+
+links.insertBefore(a,addBtn)
+
+saveLinks()
+
+dialog.style.display="none"
+
+}
+}
+
+function saveLinks(){
+
+const arr=[]
+
+links.querySelectorAll("a:not(.add-btn)").forEach(a=>{
+arr.push({name:a.innerText,url:a.href})
+})
+
+localStorage.setItem("links",JSON.stringify(arr))
+
+}
+
+function loadLinks(){
+
+const data=localStorage.getItem("links")
+if(!data) return
+
+JSON.parse(data).forEach(l=>{
+
+const a=document.createElement("a")
+a.className="link-btn"
+a.innerText=l.name
+
+a.href=l.url
+
+a.target="_blank"
+
+links.insertBefore(a,addBtn)
+
+})
+
+}
+
+/* ---------------- COLOR ---------------- */
+
+const colors=["rainbow1","rainbow2","rainbow3","rainbow4","rainbow5","rainbow6","rainbow7"]
+const colorBtn=document.getElementById("colorBtn")
+const body=document.getElementById("body")
+
+colorBtn.onclick=()=>{
+
+body.className=""
+const random=colors[Math.floor(Math.random()*colors.length)]
+
+body.classList.add(random)
+
+localStorage.setItem("color",random)
+
+}
+
+function loadColor(){
+
+const c=localStorage.getItem("color")
+
+if(c) body.classList.add(c)
+
+}
+
+/* ---------------- AVATAR ---------------- */
+
+const avatar=document.getElementById("avatar")
+const fileInput=document.getElementById("fileInput")
+const cropDialog=document.getElementById("cropDialog")
+const preview=document.getElementById("preview")
+
+let img
+
+let state={
+scale:1,
+x:0,
+y:0
+}
+
+let dragging=false
+let startX=0
+let startY=0
+
+avatar.onclick=()=>fileInput.click()
+
+fileInput.onchange=(e)=>{
+
+const file=e.target.files[0]
+if(!file) return
+
+const reader=new FileReader()
+
+reader.onload=function(event){
+
+preview.innerHTML=""
+
+img=document.createElement("img")
+img.src=event.target.result
+
+preview.appendChild(img)
+
+state={scale:1,x:0,y:0}
+applyTransform()
+
+cropDialog.style.display="flex"
+
+}
+
+reader.readAsDataURL(file)
+
+}
+
+function applyTransform(){
+
+if(!img) return
+
+img.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale})`
+
+}
+
+preview.onmousedown=(e)=>{
+
+dragging=true
+startX=e.clientX-state.x
+startY=e.clientY-state.y
+preview.style.cursor="grabbing"
+
+}
+
+window.onmouseup=()=>{
+dragging=false
+preview.style.cursor="grab"
+}
+
+window.onmousemove=(e)=>{
+
+if(!dragging) return
+
+state.x=e.clientX-startX
+state.y=e.clientY-startY
+
+applyTransform()
+
+}
+
+preview.onwheel=(e)=>{
+
+e.preventDefault()
+
+const delta=e.deltaY>0?-0.05:0.05
+
+state.scale+=delta
+
+if(state.scale<0.2) state.scale=0.2
+if(state.scale>5) state.scale=5
+
+applyTransform()
+
+}
+
+function saveAvatar(){
+
+if(!img) return
+
+avatar.innerHTML=""
+
+const clone=document.createElement("img")
+clone.src=img.src
+
+clone.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale})`
+
+avatar.appendChild(clone)
+
+cropDialog.style.display="none"
+
+localStorage.setItem("avatarSrc",img.src)
+localStorage.setItem("avatarState",JSON.stringify(state))
+
+}
+
+function loadAvatar(){
+
+const src=localStorage.getItem("avatarSrc")
+
+if(!src) return
+
+const savedState=JSON.parse(localStorage.getItem("avatarState")||"{}")
+
+state.scale=savedState.scale||1
+state.x=savedState.x||0
+state.y=savedState.y||0
+
+const image=document.createElement("img")
+image.src=src
+
+image.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale})`
+
+avatar.innerHTML=""
+avatar.appendChild(image)
+
+}
+
+/* ---------------- INIT ---------------- */
+
+loadLinks()
+loadColor()
+loadAvatar()
+
+</script>
+
+</body>
+</html>
